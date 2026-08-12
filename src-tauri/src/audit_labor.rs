@@ -288,7 +288,7 @@ pub struct ContributionArtifact {
     pub size_bytes: u64,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Default)]
 #[serde(rename_all = "camelCase")]
 pub struct AuditFinding {
     pub id: String,
@@ -298,6 +298,22 @@ pub struct AuditFinding {
     pub impact: Option<String>,
     pub evidence: Vec<String>,
     pub reportable: bool,
+    /// Structured exploit path for the finding, if the model emitted one.
+    /// Optional + defaulted so prior signed receipts keep parsing.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub exploit_path: Option<String>,
+    /// Structured source location (file path) the finding accuses.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub file_path: Option<String>,
+    /// Structured function name the finding accuses.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub function: Option<String>,
+    /// Structured line number the finding accuses.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub line: Option<u64>,
+    /// Structured reproduction steps the model emitted, if any.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub reproduction_steps: Vec<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
@@ -2560,6 +2576,7 @@ mod tests {
                 impact: Some("fund loss".to_string()),
                 evidence: vec!["src/Vault.sol:42".to_string()],
                 reportable: true,
+            ..Default::default(),
             }],
             vec![artifact("validation-notes.md")],
             vec![CoverageItem {
@@ -2657,6 +2674,7 @@ mod tests {
                 impact: Some("fund loss".to_string()),
                 evidence: vec!["src/Vault.sol:42".to_string()],
                 reportable: true,
+            ..Default::default(),
             }],
             vec![artifact("finding.md")],
             vec![CoverageItem {
@@ -2779,6 +2797,7 @@ mod tests {
                 impact: Some("loss of rewards".to_string()),
                 evidence: vec!["src/Rewards.sol:10".to_string()],
                 reportable: true,
+            ..Default::default(),
             }],
             vec![artifact("findings.json")],
             vec![CoverageItem {
@@ -2803,6 +2822,7 @@ mod tests {
                 impact: Some("principal theft".to_string()),
                 evidence: vec!["known audit report".to_string()],
                 reportable: true,
+            ..Default::default(),
             }],
             vec![artifact("duplicate.md")],
             vec![CoverageItem {

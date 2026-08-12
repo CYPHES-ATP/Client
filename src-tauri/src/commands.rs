@@ -529,6 +529,7 @@ pub async fn record_campaign_contribution(
                     .to_string(),
             ],
             reportable: false,
+        ..Default::default(),
         }],
         vec![artifact],
         vec![CoverageItem {

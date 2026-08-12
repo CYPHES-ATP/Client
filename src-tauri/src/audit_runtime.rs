@@ -1929,6 +1929,13 @@ fn value_to_finding((index, value): (usize, &Value), commands: &[String]) -> Aud
             .and_then(Value::as_str)
             .map(ToString::to_string),
         evidence: string_array(value, "evidence"),
+        exploit_path: string_field(value, "exploitPath"),
+        file_path: string_field(value, "filePath"),
+        function: string_field(value, "function"),
+        line: value
+            .get("line")
+            .and_then(Value::as_u64),
+        reproduction_steps: string_array(value, "reproductionSteps"),
         // The model's boolean is advisory input only. Reportability is derived
         // later from a dedicated validation work unit plus campaign scope.
         reportable: false,
