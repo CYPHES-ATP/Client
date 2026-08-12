@@ -29,8 +29,8 @@ const LEGACY_PROOF_WIRE_COMPAT: bool = true;
 pub const AUTONOMOUS_FINALITY_PROFILE: &str = "cyphes.autonomous-finality/0.1";
 pub const AUDIT_LABOR_PROFILE_VERSION: &str = "0.1";
 pub const DEFAULT_SKILL_PACK_ID: &str = "cyphes-audit-skill";
-pub const DEFAULT_SKILL_PACK_VERSION: &str = "0.5";
-pub const DEFAULT_SKILL_PACK_LABEL: &str = "CYPHES audit methodology v0.5";
+pub const DEFAULT_SKILL_PACK_VERSION: &str = "0.6";
+pub const DEFAULT_SKILL_PACK_LABEL: &str = "CYPHES audit methodology v0.6";
 pub const WORK_UNIT_CLAIM_TTL_MS: u64 = 15 * 60 * 1000;
 
 const DEFAULT_AUDIT_SKILL_TEXT: &str =

@@ -48,6 +48,14 @@ Field rules — read these before copying the shape:
   informational findings.
 - "evidence" entries cite a file path from the supplied context, plus a function
   or line where you have one, and must come from the file being accused.
+- "exploitPath" (optional) is a concise walk of the attack path: who calls what,
+  in what order, to reach the bad state. Omit for informational findings.
+- "filePath" (optional) is the exact repository-relative path of the file being
+  accused (e.g. "contracts/Vault.sol"). Must match a file in the supplied context.
+- "function" (optional) is the function name being accused.
+- "line" (optional) is the integer line number of the defect.
+- "reproductionSteps" (optional) is a list of concrete steps to reproduce on a
+  testnet/fork. Omit when not applicable.
 
 Shape (illustration only — do not copy these values):
 
@@ -61,6 +69,11 @@ Shape (illustration only — do not copy these values):
       "status": "candidate",
       "impact": "Reachable by any depositor when the vault is empty. No mitigation: the early return at line 214 precedes _accrue(). Bounded to one accrual period, no fund loss.",
       "evidence": ["contracts/Vault.sol: withdraw(), line 214 - early return before _accrue()"],
+      "exploitPath": "depositor calls withdraw() when totalSupply is zero; early return at line 214 skips _accrue()",
+      "filePath": "contracts/Vault.sol",
+      "function": "withdraw",
+      "line": 214,
+      "reproductionSteps": ["Deploy Vault with zero supply", "Call withdraw() as any depositor", "Observe fee accrual skipped"],
       "reportable": false
     }
   ],
@@ -1816,6 +1829,18 @@ struct ParsedModelOutput {
     parser_fallback: bool,
 }
 
+/// Whether this node should emit structured finding fields (exploitPath,
+/// filePath, function, line, reproductionSteps) into signed contributions.
+///
+/// Defaults to OFF so canonical signed bytes are unchanged and existing
+/// unpatched peers can still verify. Enable only when the network advertises
+/// `structured_finding_fields_v1` (see LABOR_CAPABILITY_STRUCTURED_FINDING_FIELDS).
+fn structured_finding_fields_enabled() -> bool {
+    std::env::var("CYPHES_STRUCTURED_FINDING_FIELDS")
+        .map(|v| !v.is_empty() && v != "0" && v.to_ascii_lowercase() != "false")
+        .unwrap_or(false)
+}
+
 fn parse_model_output(content: &str) -> ParsedModelOutput {
     let parsed = extract_json(content).and_then(|value| parse_json_output(&value));
     parsed.unwrap_or_else(|reason| ParsedModelOutput {
@@ -1929,13 +1954,31 @@ fn value_to_finding((index, value): (usize, &Value), commands: &[String]) -> Aud
             .and_then(Value::as_str)
             .map(ToString::to_string),
         evidence: string_array(value, "evidence"),
-        exploit_path: string_field(value, "exploitPath"),
-        file_path: string_field(value, "filePath"),
-        function: string_field(value, "function"),
-        line: value
-            .get("line")
-            .and_then(Value::as_u64),
-        reproduction_steps: string_array(value, "reproductionSteps"),
+        exploit_path: if structured_finding_fields_enabled() {
+            string_field(value, "exploitPath")
+        } else {
+            None
+        },
+        file_path: if structured_finding_fields_enabled() {
+            string_field(value, "filePath")
+        } else {
+            None
+        },
+        function: if structured_finding_fields_enabled() {
+            string_field(value, "function")
+        } else {
+            None
+        },
+        line: if structured_finding_fields_enabled() {
+            value.get("line").and_then(Value::as_u64)
+        } else {
+            None
+        },
+        reproduction_steps: if structured_finding_fields_enabled() {
+            string_array(value, "reproductionSteps")
+        } else {
+            Vec::new()
+        },
         // The model's boolean is advisory input only. Reportability is derived
         // later from a dedicated validation work unit plus campaign scope.
         reportable: false,
@@ -2493,6 +2536,51 @@ mod tests {
         assert_eq!(output.findings.len(), 1);
         assert_eq!(output.coverage[0].area, "scope");
         assert!(output.notes_markdown.contains("Reviewed"));
+    }
+
+    #[test]
+    fn structured_finding_fields_gated_by_env_flag() {
+        // Model emits the new structured fields.
+        let json = r#"{
+          "summaryMarkdown": "Audit Summary",
+          "findings": [{
+            "id":"X",
+            "title":"Lead",
+            "severity":"low",
+            "status":"candidate",
+            "impact":"Reachable by any depositor.",
+            "evidence":["contracts/Vault.sol: withdraw(), line 214"],
+            "exploitPath":"depositor calls withdraw() when supply is zero",
+            "filePath":"contracts/Vault.sol",
+            "function":"withdraw",
+            "line":214,
+            "reproductionSteps":["Deploy Vault", "Call withdraw()"],
+            "reportable":false
+          }],
+          "coverage": [{"area":"scope","status":"completed","evidence":["README.md reviewed"]}],
+          "commands": ["no repository code execution"]
+        }"#;
+
+        // Default (flag unset) => fields must be None so canonical signed bytes are unchanged.
+        std::env::remove_var("CYPHES_STRUCTURED_FINDING_FIELDS");
+        let off = parse_model_output(json);
+        assert_eq!(off.findings.len(), 1);
+        assert!(off.findings[0].exploit_path.is_none(), "exploit_path must be None when flag off");
+        assert!(off.findings[0].file_path.is_none(), "file_path must be None when flag off");
+        assert!(off.findings[0].function.is_none(), "function must be None when flag off");
+        assert!(off.findings[0].line.is_none(), "line must be None when flag off");
+        assert!(off.findings[0].reproduction_steps.is_empty(), "reproduction_steps must be empty when flag off");
+
+        // Flag on => fields populate.
+        std::env::set_var("CYPHES_STRUCTURED_FINDING_FIELDS", "1");
+        let on = parse_model_output(json);
+        assert_eq!(on.findings[0].exploit_path.as_deref(), Some("depositor calls withdraw() when supply is zero"));
+        assert_eq!(on.findings[0].file_path.as_deref(), Some("contracts/Vault.sol"));
+        assert_eq!(on.findings[0].function.as_deref(), Some("withdraw"));
+        assert_eq!(on.findings[0].line, Some(214));
+        assert_eq!(on.findings[0].reproduction_steps.len(), 2);
+
+        std::env::remove_var("CYPHES_STRUCTURED_FINDING_FIELDS");
     }
 
     #[test]
