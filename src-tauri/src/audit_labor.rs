@@ -2576,7 +2576,7 @@ mod tests {
                 impact: Some("fund loss".to_string()),
                 evidence: vec!["src/Vault.sol:42".to_string()],
                 reportable: true,
-            ..Default::default(),
+            ..Default::default()
             }],
             vec![artifact("validation-notes.md")],
             vec![CoverageItem {
@@ -2674,7 +2674,7 @@ mod tests {
                 impact: Some("fund loss".to_string()),
                 evidence: vec!["src/Vault.sol:42".to_string()],
                 reportable: true,
-            ..Default::default(),
+            ..Default::default()
             }],
             vec![artifact("finding.md")],
             vec![CoverageItem {
@@ -2797,7 +2797,7 @@ mod tests {
                 impact: Some("loss of rewards".to_string()),
                 evidence: vec!["src/Rewards.sol:10".to_string()],
                 reportable: true,
-            ..Default::default(),
+            ..Default::default()
             }],
             vec![artifact("findings.json")],
             vec![CoverageItem {
@@ -2822,7 +2822,7 @@ mod tests {
                 impact: Some("principal theft".to_string()),
                 evidence: vec!["known audit report".to_string()],
                 reportable: true,
-            ..Default::default(),
+            ..Default::default()
             }],
             vec![artifact("duplicate.md")],
             vec![CoverageItem {
