@@ -14,7 +14,7 @@ use crate::{
     github,
 };
 
-const AUDIT_SKILL_TEXT: &str = include_str!("../../protocol/skills/cyphes-audit-skill.v0.5.md");
+const AUDIT_SKILL_TEXT: &str = include_str!("../../protocol/skills/cyphes-audit-skill.v0.6.md");
 const MAX_TREE_FILES: usize = 20_000;
 const MAX_SELECTED_FILES: usize = 16;
 const MAX_FILE_BYTES: usize = 28_000;
@@ -2142,7 +2142,7 @@ fn is_placeholder_text(value: &str) -> bool {
         || normalized.contains("contract.sol")
         || normalized.contains("artifact hash: 0x")
         // Strings lifted verbatim from the illustration in
-        // STRUCTURED_OUTPUT_CONTRACT and skill pack v0.5.
+        // STRUCTURED_OUTPUT_CONTRACT and skill pack v0.6.
         //
         // v0.4 used obviously-fake placeholders, and weak models echoed them
         // ("finding or security lead title" was the single most common finding

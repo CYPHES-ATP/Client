@@ -34,7 +34,7 @@ pub const DEFAULT_SKILL_PACK_LABEL: &str = "CYPHES audit methodology v0.6";
 pub const WORK_UNIT_CLAIM_TTL_MS: u64 = 15 * 60 * 1000;
 
 const DEFAULT_AUDIT_SKILL_TEXT: &str =
-    include_str!("../../protocol/skills/cyphes-audit-skill.v0.5.md");
+    include_str!("../../protocol/skills/cyphes-audit-skill.v0.6.md");
 const PARSER_FALLBACK_CREDIT_MULTIPLIER: f64 = 0.10;
 const LOW_EVIDENCE_CREDIT_MULTIPLIER: f64 = 0.20;
 const STANDARD_OUTPUT_MODEL_MULTIPLIER_CAP: f64 = 1.0;
@@ -1645,7 +1645,7 @@ pub fn final_report_markdown(snapshot: &CampaignReportSnapshot) -> String {
     }
 
     report.push_str(
-        "## Methodology\n\nCYPHES v0.5 decomposes repository review into remotely claimable professional audit passes: scope mapping, repository inventory, dependency/config review, exploit-class analysis, finding validation, final report synthesis, and peer verification. Local model output is only accepted into the final report after it is signed and verified.\n\n",
+        "## Methodology\n\nCYPHES v0.6 decomposes repository review into remotely claimable professional audit passes: scope mapping, repository inventory, dependency/config review, exploit-class analysis, finding validation, final report synthesis, and peer verification. Local model output is only accepted into the final report after it is signed and verified.\n\n",
     );
 
     report.push_str("## Audit Pass Matrix\n\n| Pass | Status | Contributions | Accepted | Receipt evidence |\n| --- | --- | ---: | ---: | --- |\n");
