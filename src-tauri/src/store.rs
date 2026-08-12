@@ -6104,7 +6104,7 @@ mod tests {
                 impact: None,
                 evidence: vec!["coverage-notes.md".to_string()],
                 reportable: false,
-            ..Default::default(),
+            ..Default::default()
             }],
             vec![labor_artifact("coverage-notes.md")],
             vec![CoverageItem {
@@ -6214,7 +6214,7 @@ mod tests {
                 impact: Some("Principal theft".to_string()),
                 evidence: vec!["prior-audit.md".to_string()],
                 reportable: true,
-            ..Default::default(),
+            ..Default::default()
             }],
             vec![labor_artifact("duplicate.md")],
             vec![CoverageItem {
@@ -6302,7 +6302,7 @@ mod tests {
                 impact: None,
                 evidence: vec!["network-candidate.md".to_string()],
                 reportable: false,
-            ..Default::default(),
+            ..Default::default()
             }],
             vec![labor_artifact("network-candidate.md")],
             vec![CoverageItem {
