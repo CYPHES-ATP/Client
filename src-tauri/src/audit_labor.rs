@@ -298,20 +298,24 @@ pub struct AuditFinding {
     pub impact: Option<String>,
     pub evidence: Vec<String>,
     pub reportable: bool,
-    /// Structured exploit path for the finding, if the model emitted one.
-    /// Optional + defaulted so prior signed receipts keep parsing.
+}
+
+/// Non-signed sidecar carrying structured validation metadata for a finding.
+/// Kept OUT of the signed canonical body so old verifiers (which drop unknown
+/// fields) re-serialize identical bytes and still verify. New verifiers read
+/// this for machine-checkable file:line / exploit-path / reproduction.
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Default)]
+#[serde(rename_all = "camelCase")]
+pub struct StructuredFindingMetadata {
+    pub finding_id: String,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub exploit_path: Option<String>,
-    /// Structured source location (file path) the finding accuses.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub file_path: Option<String>,
-    /// Structured function name the finding accuses.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub function: Option<String>,
-    /// Structured line number the finding accuses.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub line: Option<u64>,
-    /// Structured reproduction steps the model emitted, if any.
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub reproduction_steps: Vec<String>,
 }
@@ -441,6 +445,11 @@ pub struct NodeContribution {
     pub artifacts: Vec<ContributionArtifact>,
     pub coverage: Vec<CoverageItem>,
     pub commands: Vec<String>,
+    /// Non-signed sidecar with structured finding metadata. Excluded from the
+    /// canonical signature so old verifiers still verify. Defaulted so prior
+    /// receipts parse.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub structured_finding_metadata: Option<Vec<StructuredFindingMetadata>>,
     #[serde(
         rename = "defenseProof",
         alias = "cognitionProof",
@@ -685,6 +694,7 @@ pub fn signed_contribution(
     runtime: RuntimeDescriptor,
     notes_markdown: String,
     findings: Vec<AuditFinding>,
+    structured_finding_metadata: Vec<StructuredFindingMetadata>,
     artifacts: Vec<ContributionArtifact>,
     coverage: Vec<CoverageItem>,
     commands: Vec<String>,
@@ -698,6 +708,7 @@ pub fn signed_contribution(
         runtime,
         notes_markdown,
         findings,
+        structured_finding_metadata,
         artifacts,
         coverage,
         commands,
@@ -711,6 +722,7 @@ pub fn signed_contribution_for_work_unit(
     runtime: RuntimeDescriptor,
     notes_markdown: String,
     findings: Vec<AuditFinding>,
+    structured_finding_metadata: Vec<StructuredFindingMetadata>,
     artifacts: Vec<ContributionArtifact>,
     coverage: Vec<CoverageItem>,
     commands: Vec<String>,
@@ -729,6 +741,7 @@ pub fn signed_contribution_for_work_unit(
         runtime,
         notes_markdown,
         findings,
+        structured_finding_metadata,
         artifacts,
         coverage,
         commands,
@@ -745,6 +758,7 @@ fn signed_contribution_with_context(
     runtime: RuntimeDescriptor,
     notes_markdown: String,
     findings: Vec<AuditFinding>,
+    structured_finding_metadata: Vec<StructuredFindingMetadata>,
     artifacts: Vec<ContributionArtifact>,
     coverage: Vec<CoverageItem>,
     commands: Vec<String>,
@@ -796,6 +810,11 @@ fn signed_contribution_with_context(
         artifacts,
         coverage,
         commands,
+        structured_finding_metadata: if structured_finding_metadata.is_empty() {
+            None
+        } else {
+            Some(structured_finding_metadata)
+        },
         cognition_proof: Some(cognition_proof),
         created_at: now_rfc3339(),
         public_key_base64_url: URL_SAFE_NO_PAD.encode(public_key),
@@ -2001,6 +2020,7 @@ fn contribution_signature_value(
     object.remove("contributionHash");
     object.remove("receiptHash");
     object.remove("signature");
+    object.remove("structuredFindingMetadata");
     Ok(value)
 }
 
@@ -2412,6 +2432,7 @@ mod tests {
             RuntimeDescriptor::deterministic_fixture(),
             "Reviewed reentrancy and oracle applicability with no reportable finding.".to_string(),
             vec![],
+            Vec::new(),
             vec![artifact("notes.md")],
             vec![CoverageItem {
                 area: "reentrancy".to_string(),
@@ -2429,6 +2450,7 @@ mod tests {
             "INSUFFICIENT_EVIDENCE".to_string(),
             "Evidence did not support the submitted lead.".to_string(),
             vec![],
+            
             vec![artifact("verification.md")],
         )
         .unwrap();
@@ -2464,6 +2486,7 @@ mod tests {
             RuntimeDescriptor::deterministic_fixture(),
             "Structured negative coverage with evidence.".to_string(),
             vec![],
+            Vec::new(),
             vec![artifact("inventory.md")],
             vec![CoverageItem {
                 area: "repository inventory".to_string(),
@@ -2480,6 +2503,7 @@ mod tests {
             RuntimeDescriptor::deterministic_fixture(),
             "Raw notes.\n\n> CYPHES parser note: model output was not valid structured JSON: no JSON object start found".to_string(),
             vec![],
+            Vec::new(),
             vec![artifact("audit-skill-output.md")],
             vec![CoverageItem {
                 area: "local model output".to_string(),
@@ -2501,6 +2525,7 @@ mod tests {
             "COVERAGE_ACCEPTED".to_string(),
             "Structured evidence is bounded and useful.".to_string(),
             vec![],
+            
             vec![artifact("verification.md")],
         )
         .unwrap();
@@ -2512,6 +2537,7 @@ mod tests {
             "PARSER_FALLBACK_ACCEPTED".to_string(),
             "Fallback notes are accepted with reduced credit.".to_string(),
             vec![],
+            
             vec![artifact("verification.md")],
         )
         .unwrap();
@@ -2578,6 +2604,7 @@ mod tests {
                 reportable: true,
             ..Default::default()
             }],
+            Vec::new(),
             vec![artifact("validation-notes.md")],
             vec![CoverageItem {
                 area: "finding validation".to_string(),
@@ -2651,6 +2678,7 @@ mod tests {
             large_model.clone(),
             "Structured coverage with one evidence-backed area.".to_string(),
             vec![],
+            Vec::new(),
             vec![artifact("inventory.md")],
             vec![CoverageItem {
                 area: "repository inventory".to_string(),
@@ -2676,6 +2704,7 @@ mod tests {
                 reportable: true,
             ..Default::default()
             }],
+            Vec::new(),
             vec![artifact("finding.md")],
             vec![CoverageItem {
                 area: "finding validation".to_string(),
@@ -2693,6 +2722,7 @@ mod tests {
             "COVERAGE_ACCEPTED".to_string(),
             "Structured evidence is bounded and useful.".to_string(),
             vec![],
+            
             vec![artifact("verification.md")],
         )
         .unwrap();
@@ -2704,6 +2734,7 @@ mod tests {
             "FINDING_ACCEPTED".to_string(),
             "Reportable finding accepted.".to_string(),
             vec![],
+            
             vec![artifact("verification.md")],
         )
         .unwrap();
@@ -2736,6 +2767,7 @@ mod tests {
             RuntimeDescriptor::deterministic_fixture(),
             "Mapped repository inventory with bounded evidence.".to_string(),
             vec![],
+            Vec::new(),
             vec![artifact("inventory.md")],
             vec![CoverageItem {
                 area: "repository inventory".to_string(),
@@ -2754,6 +2786,7 @@ mod tests {
             "Self-verification is useful for local preview but cannot issue earned ATP."
                 .to_string(),
             vec![],
+            
             vec![artifact("verification.md")],
         )
         .unwrap();
@@ -2799,6 +2832,7 @@ mod tests {
                 reportable: true,
             ..Default::default()
             }],
+            Vec::new(),
             vec![artifact("findings.json")],
             vec![CoverageItem {
                 area: "reportability gate".to_string(),
@@ -2824,6 +2858,7 @@ mod tests {
                 reportable: true,
             ..Default::default()
             }],
+            Vec::new(),
             vec![artifact("duplicate.md")],
             vec![CoverageItem {
                 area: "known issue search".to_string(),
@@ -2841,6 +2876,7 @@ mod tests {
             "FINDING_ACCEPTED".to_string(),
             "Accepted.".to_string(),
             vec![],
+            
             vec![artifact("verification-a.md")],
         )
         .unwrap();
@@ -2852,6 +2888,7 @@ mod tests {
             "DUPLICATE".to_string(),
             "Duplicate.".to_string(),
             vec![],
+            
             vec![artifact("verification-r.md")],
         )
         .unwrap();

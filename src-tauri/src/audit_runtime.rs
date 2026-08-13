@@ -8,7 +8,7 @@ use serde_json::{json, Value};
 use crate::{
     audit_labor::{
         sha256_ref, AuditFinding, AuditWorkUnit, ContributionArtifact, CoverageItem,
-        NodeContribution, ProtocolAuditCampaign, RuntimeDescriptor,
+        NodeContribution, ProtocolAuditCampaign, RuntimeDescriptor, StructuredFindingMetadata,
     },
     audit_profile::RepositoryTarget,
     github,
@@ -123,6 +123,7 @@ pub struct LocalAuditSkillRun {
     pub runtime: RuntimeDescriptor,
     pub notes_markdown: String,
     pub findings: Vec<AuditFinding>,
+    pub structured_finding_metadata: Vec<StructuredFindingMetadata>,
     pub artifacts: Vec<ContributionArtifact>,
     pub coverage: Vec<CoverageItem>,
     pub commands: Vec<String>,
@@ -555,6 +556,7 @@ pub async fn run_local_audit_skill(
         runtime,
         notes_markdown: parsed.notes_markdown,
         findings: parsed.findings,
+        structured_finding_metadata: parsed.structured_finding_metadata,
         artifacts,
         coverage: parsed.coverage,
         commands: parsed.commands,
@@ -1288,6 +1290,7 @@ fn target_source_absent_run(
         },
         notes_markdown,
         findings,
+        structured_finding_metadata: Vec::new(),
         artifacts,
         coverage,
         commands,
@@ -1824,21 +1827,10 @@ fn prior_contribution_digest(contributions: &[NodeContribution]) -> String {
 struct ParsedModelOutput {
     notes_markdown: String,
     findings: Vec<AuditFinding>,
+    structured_finding_metadata: Vec<StructuredFindingMetadata>,
     coverage: Vec<CoverageItem>,
     commands: Vec<String>,
     parser_fallback: bool,
-}
-
-/// Whether this node should emit structured finding fields (exploitPath,
-/// filePath, function, line, reproductionSteps) into signed contributions.
-///
-/// Defaults to OFF so canonical signed bytes are unchanged and existing
-/// unpatched peers can still verify. Enable only when the network advertises
-/// `structured_finding_fields_v1` (see LABOR_CAPABILITY_STRUCTURED_FINDING_FIELDS).
-fn structured_finding_fields_enabled() -> bool {
-    std::env::var("CYPHES_STRUCTURED_FINDING_FIELDS")
-        .map(|v| !v.is_empty() && v != "0" && v.to_ascii_lowercase() != "false")
-        .unwrap_or(false)
 }
 
 fn parse_model_output(content: &str) -> ParsedModelOutput {
@@ -1850,6 +1842,7 @@ fn parse_model_output(content: &str) -> ParsedModelOutput {
             reason
         ),
         findings: Vec::new(),
+        structured_finding_metadata: Vec::new(),
         coverage: vec![CoverageItem {
             area: "local model output".to_string(),
             status: "needs_review".to_string(),
@@ -1899,13 +1892,18 @@ fn parse_json_output(value: &Value) -> Result<ParsedModelOutput, String> {
         })
         .filter(|items| !items.is_empty())
         .ok_or_else(|| "commands array is required".to_string())?;
-    let findings = value
+    let finding_pairs = value
         .get("findings")
         .and_then(Value::as_array)
         .ok_or_else(|| "findings array is required".to_string())?
         .iter()
         .enumerate()
         .map(|item| value_to_finding(item, &commands))
+        .collect::<Vec<_>>();
+    let findings = finding_pairs.iter().map(|(f, _)| f.clone()).collect::<Vec<_>>();
+    let structured_finding_metadata = finding_pairs
+        .into_iter()
+        .map(|(_, m)| m)
         .collect::<Vec<_>>();
     let coverage = value
         .get("coverage")
@@ -1927,19 +1925,25 @@ fn parse_json_output(value: &Value) -> Result<ParsedModelOutput, String> {
     Ok(ParsedModelOutput {
         notes_markdown,
         findings,
+        structured_finding_metadata,
         coverage,
         commands,
         parser_fallback: false,
     })
 }
 
-fn value_to_finding((index, value): (usize, &Value), commands: &[String]) -> AuditFinding {
+fn value_to_finding(
+    (index, value): (usize, &Value),
+    commands: &[String],
+) -> (AuditFinding, StructuredFindingMetadata) {
     let requested_reportable = value
         .get("reportable")
         .and_then(Value::as_bool)
         .unwrap_or(false);
+    let finding_id =
+        string_field(value, "id").unwrap_or_else(|| format!("CYPHES-LOCAL-{:03}", index + 1));
     let mut finding = AuditFinding {
-        id: string_field(value, "id").unwrap_or_else(|| format!("CYPHES-LOCAL-{:03}", index + 1)),
+        id: finding_id.clone(),
         title: string_field(value, "title").unwrap_or_else(|| "Untitled model lead".to_string()),
         severity: string_field(value, "severity").unwrap_or_else(|| "informational".to_string()),
         status: string_field(value, "status").unwrap_or_else(|| {
@@ -1954,31 +1958,6 @@ fn value_to_finding((index, value): (usize, &Value), commands: &[String]) -> Aud
             .and_then(Value::as_str)
             .map(ToString::to_string),
         evidence: string_array(value, "evidence"),
-        exploit_path: if structured_finding_fields_enabled() {
-            string_field(value, "exploitPath")
-        } else {
-            None
-        },
-        file_path: if structured_finding_fields_enabled() {
-            string_field(value, "filePath")
-        } else {
-            None
-        },
-        function: if structured_finding_fields_enabled() {
-            string_field(value, "function")
-        } else {
-            None
-        },
-        line: if structured_finding_fields_enabled() {
-            value.get("line").and_then(Value::as_u64)
-        } else {
-            None
-        },
-        reproduction_steps: if structured_finding_fields_enabled() {
-            string_array(value, "reproductionSteps")
-        } else {
-            Vec::new()
-        },
         // The model's boolean is advisory input only. Reportability is derived
         // later from a dedicated validation work unit plus campaign scope.
         reportable: false,
@@ -1988,7 +1967,17 @@ fn value_to_finding((index, value): (usize, &Value), commands: &[String]) -> Aud
             finding.status = "needs_reproduction".to_string();
         }
     }
-    finding
+    // Structured metadata goes in the NON-signed sidecar, so the signed
+    // canonical body stays byte-identical to v0.5 and old verifiers still pass.
+    let metadata = StructuredFindingMetadata {
+        finding_id,
+        exploit_path: string_field(value, "exploitPath"),
+        file_path: string_field(value, "filePath"),
+        function: string_field(value, "function"),
+        line: value.get("line").and_then(Value::as_u64),
+        reproduction_steps: string_array(value, "reproductionSteps"),
+    };
+    (finding, metadata)
 }
 
 fn apply_validation_reportability(
@@ -2539,7 +2528,7 @@ mod tests {
     }
 
     #[test]
-    fn structured_finding_fields_gated_by_env_flag() {
+    fn structured_finding_metadata_goes_to_sidecar() {
         // Model emits the new structured fields.
         let json = r#"{
           "summaryMarkdown": "Audit Summary",
@@ -2561,26 +2550,17 @@ mod tests {
           "commands": ["no repository code execution"]
         }"#;
 
-        // Default (flag unset) => fields must be None so canonical signed bytes are unchanged.
-        std::env::remove_var("CYPHES_STRUCTURED_FINDING_FIELDS");
-        let off = parse_model_output(json);
-        assert_eq!(off.findings.len(), 1);
-        assert!(off.findings[0].exploit_path.is_none(), "exploit_path must be None when flag off");
-        assert!(off.findings[0].file_path.is_none(), "file_path must be None when flag off");
-        assert!(off.findings[0].function.is_none(), "function must be None when flag off");
-        assert!(off.findings[0].line.is_none(), "line must be None when flag off");
-        assert!(off.findings[0].reproduction_steps.is_empty(), "reproduction_steps must be empty when flag off");
-
-        // Flag on => fields populate.
-        std::env::set_var("CYPHES_STRUCTURED_FINDING_FIELDS", "1");
-        let on = parse_model_output(json);
-        assert_eq!(on.findings[0].exploit_path.as_deref(), Some("depositor calls withdraw() when supply is zero"));
-        assert_eq!(on.findings[0].file_path.as_deref(), Some("contracts/Vault.sol"));
-        assert_eq!(on.findings[0].function.as_deref(), Some("withdraw"));
-        assert_eq!(on.findings[0].line, Some(214));
-        assert_eq!(on.findings[0].reproduction_steps.len(), 2);
-
-        std::env::remove_var("CYPHES_STRUCTURED_FINDING_FIELDS");
+        let out = parse_model_output(json);
+        assert_eq!(out.findings.len(), 1);
+        // The signed AuditFinding stays at 7 fields (no structured fields).
+        assert_eq!(out.structured_finding_metadata.len(), 1);
+        let meta = &out.structured_finding_metadata[0];
+        assert_eq!(meta.finding_id, "X");
+        assert_eq!(meta.exploit_path.as_deref(), Some("depositor calls withdraw() when supply is zero"));
+        assert_eq!(meta.file_path.as_deref(), Some("contracts/Vault.sol"));
+        assert_eq!(meta.function.as_deref(), Some("withdraw"));
+        assert_eq!(meta.line, Some(214));
+        assert_eq!(meta.reproduction_steps.len(), 2);
     }
 
     #[test]

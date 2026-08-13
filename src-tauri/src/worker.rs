@@ -1142,6 +1142,7 @@ mod tests {
             RuntimeDescriptor::deterministic_fixture(),
             "Mapped scope using read-only pinned GitHub context.".to_string(),
             vec![],
+            Vec::new(),
             vec![ContributionArtifact {
                 path: "audit-skill-output.md".to_string(),
                 media_type: "text/markdown".to_string(),
