@@ -2,11 +2,11 @@
 <div align="center">
   <h1>CYPHES</h1>
   <p><strong>Autonomous cyber defense.</strong></p>
-  <p>CYPHES turns local AI models into paid cyber workers. Protocols fund continuous defense. Verifiers settle Cognition Proofs. ATP powers the labor market.</p>
+  <p>CYPHES turns local AI models into independent cyber workers. Protocols coordinate continuous defense. Verifiers settle Cognition Proofs into a verifiable work ledger.</p>
   <p>
     <a href="ROADMAP.md"><img alt="Status: Mainnet" src="https://img.shields.io/badge/status-mainnet-00f6ff"></a>
     <a href="ROADMAP.md"><img alt="CYPHES: v0.17.8 mainnet" src="https://img.shields.io/badge/CYPHES-v0.17.8_mainnet-c7ff47"></a>
-    <a href="docs/ATP_IMPLEMENTATION_STATUS.md"><img alt="ATP wire: v0.15.1" src="https://img.shields.io/badge/ATP_wire-v0.15.1-00f6ff"></a>
+    <a href="docs/ATP_IMPLEMENTATION_STATUS.md"><img alt="Receipt wire: v0.15.1" src="https://img.shields.io/badge/receipt_wire-v0.15.1-00f6ff"></a>
     <a href="LICENSE"><img alt="License: MIT" src="https://img.shields.io/badge/license-MIT-f5fbfa"></a>
   </p>
 </div>
@@ -20,7 +20,7 @@
 The current active release is **CYPHES v0.17.8 Mainnet**. CYPHES is a
 coordination layer for agentic cyber workers: local AI nodes perform scoped
 security labor, independent verifier nodes settle signed Cognition Proof
-receipts, and ATP credits become the unit of account for verified defense.
+receipts, which become the unit of account for verified defense.
 Nodes use the CYPHES-operated `source.cyphes.com` gateway first and fall back
 to their own GitHub token/direct reads if it is unavailable.
 
@@ -51,12 +51,12 @@ host would start, fail to composite a webview, and idle forever without ever
 connecting to the relay. `RUST_LOG` also works for the first time; the app
 previously had no logging framework at all. See **Headless nodes** below.
 
-v0.17.2 is a non-mandatory economic-integrity release. It corrects a model
-scoring defect, closes a credit-inflation path, and ships a commit-pinned
+v0.17.2 is a non-mandatory model-scoring-integrity release. It corrects a model
+scoring defect, closes a score-inflation path, and ships a commit-pinned
 benchmark set. The database marker, `/cyphes/atp/0.15.1` labor wire, and receipt
-format are unchanged; model economics remain forward-only, so no historical ATP
-is recomputed. GLM releases were previously matched by no tier rule and were
-credited at the `0.9x` unknown-model floor — the same rate as a 3B local model.
+format are unchanged; model economics remain forward-only, so no historical work
+allocation is recomputed. GLM releases were previously matched by no tier rule and were
+assigned the `0.9x` unknown-model floor — the same rate as a 3B local model.
 Frontier multipliers on cloud-proxied runtimes are now gated on measured
 throughput, so relabelling a small local model no longer buys the top tier.
 `kimi-k3` takes a reserved `50.0x` tier. A new commit-pinned benchmark set of 19
@@ -78,7 +78,7 @@ it is accusing — before it may claim anything above `informational`.
 
 v0.17.0 is a non-mandatory mainnet liveness release over the existing
 `cyphes-final-testnet-v0.16.0.sqlite3` genesis ledger marker. That marker is
-preserved so final-testnet work, findings, ATP allocations, receipts, peer
+preserved so final-testnet work, findings, work allocations, receipts, peer
 history, and proof roots continue forward without a database reset. Old receipts
 keep their original economics; model scoring continues forward-only on new
 mainnet receipts.
@@ -98,14 +98,14 @@ automatically, reconciles stale pending receipts into an honest superseded
 lifecycle when the work unit already finalized, excludes those receipts from
 worker backpressure and verifier-pending counts, gates bounty candidates on
 concrete file/function/line, exploit path, impact, and reproduction evidence,
-splits ATP quality rewards by proof quality, advertises model/runtime
+applies proof-quality weighting, advertises model/runtime
 capability cards in new signed work, and keeps the Receipt Inspector cockpit for
 reviewing verified, pending, and penalized proof packets.
 
-Verified ATP remains receipt-derived instead of SQLite-trusted: earned credits
-require a signed contribution, a signed acceptance from an independent verifier,
+Verified work remains receipt-derived instead of SQLite-trusted: completed work
+requires a signed contribution, a signed acceptance from an independent verifier,
 and a deterministic allocation that matches the receipt data. Self-verification
-can still test the local loop, but it cannot mint earned ATP.
+can still test the local loop, but it cannot create verified work.
 
 Downloads:
 
@@ -171,8 +171,8 @@ state:
 
 - Contributions: `6,068`
 - Verifications: `6,015`
-- ATP allocation rows: `12,030`
-- ATP allocated: `636,044`
+- Work-allocation rows: `12,030`
+- Verified work units: `636,044`
 - Active submitted-pending receipts: `0`
 - Signed Cognition Proof packets: `6,068`
 - Worker identities observed: `3`
@@ -191,7 +191,7 @@ reproduction evidence before earning the bounty-grade path.
 ## Model Scoring Registry
 
 Model economics are forward-only. The multiplier is signed into each new
-runtime receipt, so v0.17.0 does not rewrite or recompute older ATP allocations.
+runtime receipt, so v0.17.0 does not rewrite or recompute.
 
 | Model or declared tier | New receipt multiplier | Basis |
 | --- | ---: | --- |
@@ -214,12 +214,12 @@ Tiers are matched most-specific-first, so `glm-5.2` does not widen to every
 falls through to the generic `20b` rule. A new model release must earn its tier
 on its own measured output rather than inheriting a sibling's.
 
-**Two gates sit between the declared tier and what is actually paid.**
+**Two gates sit between the declared tier and the final applied multiplier.**
 
 *Throughput gate.* Any multiplier above `3.0x` on a cloud-proxied runtime
 requires measured throughput of at least 25 tokens/sec. A contribution that
 declares the cloud tier but reports less — or omits the measurement entirely —
-is credited at `3.0x`, the large-local ceiling. The gate is deliberately
+is assigned `3.0x`, the large-local ceiling. The gate is deliberately
 one-sided: large *local* models are legitimately slower than small ones, so low
 throughput is never held against a local claim. This raises the cost of
 relabelling a small local model from one shell command to a patched binary.
@@ -239,7 +239,7 @@ Use **CYPHES** to join as a verifier by default. Select a local model and press
 **Contribute** only when you want that node to start local audit work; press **Stop worker**
 to return to verifier-only participation. The separate protocol/admin console remains available from source at
 `campaign.html` for manual campaign creation, verification inspection, report
-export, and ATP proof logs.
+export, and Cognition Proof logs.
 
 Self-hosted worker nodes should run on isolated hardware, a dedicated OS account,
 or a VM until the hardened headless worker sandbox ships. See
@@ -253,7 +253,7 @@ still configure a local fallback token with `CYPHES_GITHUB_TOKEN`,
 `~/.cyphes/settings.json`, but CYPHES never ships a shared embedded GitHub
 token.
 
-The receipt runtime completes one ATP-L1 repository-audit transaction:
+The receipt runtime completes one signed repository-audit transaction:
 
 ```text
 DISCOVER -> NEGOTIATE -> NEGOTIATE -> ROUTE -> SETTLE -> ATTEST
@@ -282,8 +282,8 @@ It records:
 
 - repository: `octocat/Hello-World`;
 - commit: `7fd1a60b01f91b314f59955a4e4d4e80d8edf11d`;
-- two independent Ed25519 ATP identities;
-- six signed, hash-linked ATP envelopes;
+- two independent Ed25519 node identities;
+- six signed, hash-linked work envelopes;
 - requester-signed repository-read and artifact-write leases;
 - lease access evidence;
 - five hashed audit artifacts;
@@ -304,7 +304,7 @@ Artifact Two independently returns:
 ## What Works
 
 - Persistent Ed25519-backed libp2p identity.
-- RFC 8785 JCS canonical ATP v0.3 envelopes.
+- RFC 8785 JCS canonical v0.3 envelopes.
 - Identity-bound signatures and authenticated transport/issuer binding.
 - Qualified SHA-256 event chaining from an explicit genesis hash.
 - SQLite nonce, idempotency, transaction, contract, lease, result, and receipt
@@ -337,13 +337,13 @@ Artifact Two independently returns:
   Ollama on that worker's Mac, sign the contribution, and send it back to the
   requester.
 - Requester verification sends signed verification results and receipt-backed
-  ATP Credit allocations back to the contributing worker, including idempotent
+  work allocations back to the contributing worker, including idempotent
   resend when that worker reconnects.
-- v0.5.7 Verified ATP is recomputed from signed contribution and verifier
-  receipts. A local SQLite edit cannot create displayed earned ATP unless the
+- v0.5.7 Verified work is recomputed from signed contribution and verifier
+  receipts. A local SQLite edit cannot create displayed verified work unless the
   signed artifacts match the deterministic allocation rules.
-- Self-verification and single-node preview loops do not issue earned ATP.
-  They remain useful for QA but show as pending/provisional until another ATP
+- Self-verification and single-node preview loops do not create verified work.
+  They remain useful for QA but show as pending/provisional until another independent
   identity verifies the work.
 - v0.6.1 Source Gateway service with server-side GitHub token or GitHub App
   installation-token support, shared read-through cache, ETag/Last-Modified
@@ -352,14 +352,14 @@ Artifact Two independently returns:
   fallback second.
 - v0.6.2 raises the default autonomous observation cap and model-audit cap to
   2880/day each for long-running testnet participation.
-- v0.6.2 applies a deterministic 90% ATP quality deduction to parser-fallback
+- v0.6.2 applies a deterministic 90% proof-quality deduction to parser-fallback
   contributions with zero structured findings, and shows that deduction in red
   in the live telemetry stream.
 - v0.6.3 requires non-requester worker contributions to have an active signed
   work-unit claim before store-level ingest accepts them.
 - v0.6.3 hardens verification bundle ingest against reused verification IDs,
   duplicate target verification mutation, and untrusted campaign snapshot
-  credits.
+  work allocations.
 - v0.6.4 fixes network verifier liveness by excluding self-authored pending
   receipts from local verifier duty and letting any independent online verifier
   settle eligible remote receipts.
@@ -371,7 +371,7 @@ Artifact Two independently returns:
   `cyphes.repository-audit.v0.7.14`, keeps the current `cyphes-dev-v0.7.7`
   testnet state, defaults every app boot to verifier mode until Run is pressed
   in that session, adds Stop to return to verifier-only mode, keeps SQLite
-  indexes for pending queue, claim sync, verifier duty, credit summary, and
+  indexes for pending queue, claim sync, verifier duty, work summary, and
   campaign snapshot queries, raises the provisional self-pending work queue to
   25 receipts, sends dependency-complete labor bundles for verifier pull, and
   keeps autonomous campaign seeding at 2400/day.
@@ -381,13 +381,13 @@ Artifact Two independently returns:
   contribution, emits `cognition-proof.json` artifacts, and binds verifier
   settlement to autonomous finality packets so valid work settles immediately
   after independent verification.
-- v0.15.2 keeps the same testnet, ATP stream, and rendezvous namespace as
+- v0.15.2 keeps the same testnet, protocol stream, and rendezvous namespace as
   v0.15.1, but signs new Cognition Proof work through the legacy
   `defenseProof` wire alias/profile and emits both `defense-proof.json` and
   `cognition-proof.json` artifact entries. This is a compatibility hotfix for
   mixed verifier nodes that were rejecting renamed proof packets with
   contribution hash mismatches.
-- v0.15.3 keeps the same testnet and ATP wire, persists explicit Run mode until
+- v0.15.3 keeps the same testnet and wire protocol, persists explicit Run mode until
   Stop is pressed, removes the observation cap as a work-stopper, raises the
   autonomous campaign seed cap to 9600/day, opens new target-completion epochs
   when the current target pass is accepted, answers labor inventory with
@@ -395,20 +395,20 @@ Artifact Two independently returns:
   relayed peer routes over stale private routes, requires the v0.15.3
   sparse-inventory capability before expensive labor-bundle ingest, and
   requires evidence-backed structured Cognition Proof output with one automatic
-  JSON repair pass before parser-fallback ATP deductions apply.
-- v0.15.4 keeps the same testnet and ATP wire, but adds a cheap duplicate and
+  JSON repair pass before parser-fallback quality deductions apply.
+- v0.15.4 keeps the same testnet and wire protocol, but adds a cheap duplicate and
   superseded-object preflight before expensive labor-bundle ingest. Known
   contribution IDs, known receipt hashes, repeated worker/work-unit receipts,
   terminal work units, known verification IDs, and already-verified
   contribution targets are skipped before signature/canonical-hash validation.
   Skips are telemetered as `labor_object_bundle_duplicate_skipped` and do not
-  mutate credits, work status, or verification state. The cockpit progress bar
+  mutate work allocations, work status, or verification state. The cockpit progress bar
   now idles static when settlement is fully cleared to avoid unnecessary desktop
-  repaints on verifier nodes. Live cockpit snapshots also skip trusted-credit
-  recomputation, while reports and credit summaries still use the full verified
-  credit path.
+  repaints on verifier nodes. Live cockpit snapshots also skip trusted-allocation
+  recomputation, while reports and work summaries still use the full verified
+  allocation path.
 - v0.15.7 is the stable rolling upgrade from v0.15.4. It preserves the same
-  testnet and ATP wire, keeps the duplicate/superseded preflight, releases
+  testnet and wire protocol, keeps the duplicate/superseded preflight, releases
   stale local claims when signed independent verifier receipts prove a work
   unit already settled, excludes superseded self-authored receipts from pending
   backpressure, raises the libp2p response read cap for real catch-up sync, and
@@ -423,20 +423,20 @@ Artifact Two independently returns:
   checksummed release folder.
 - v0.16.1 keeps the same Final Testnet marker as v0.16.0 and adds honest
   superseded receipt accounting for finalized work units, bounty-candidate
-  gating for reportable findings, quality-weighted ATP tiers for low-evidence
+  gating for reportable findings, quality-weighted scoring tiers for low-evidence
   versus bounty-grade proofs, a cleaner cockpit without the old settlement row,
   and Guardian epoch completion percentage beside the 165 target count.
 - v0.16.2 is the in-place Mainnet migration. It preserves the
   `cyphes-final-testnet-v0.16.0` genesis ledger marker and all final-testnet
-  receipts, keeps old ATP economics intact, raises `minimax-m3` to `10.0x`,
+  receipts, keeps earlier model scoring intact, raises `minimax-m3` to `10.0x`,
   adds explicit frontier/cloud scoring tiers, signs model/node capability cards
   into new Cognition Proof receipts, and tightens the bounty gate so
   `reportable:true` requires concrete location, exploit path, impact, and
   reproduction evidence.
 - v0.16.7 is a non-mandatory Mainnet peer-discovery pressure hotfix. It keeps the database
-  marker, ATP wire, receipt format, and economics compatible while replacing
+  marker, wire protocol, receipt format, and scoring compatible while replacing
   ordinary cockpit refreshes with one aggregate backend dashboard summary,
-  caching verified credit summaries by ledger head, coalescing duplicate network
+  caching verified allocation summaries by ledger head, coalescing duplicate network
   refresh events, and lazily loading full campaign snapshots only when detailed
   receipt inspection or worker actions need them. It also refreshes stale local
   claim state before running a cached work unit, preventing repeated
@@ -458,7 +458,7 @@ Artifact Two independently returns:
   at `10.0x`, because tiers are earned per release rather than inherited. The
   README scoring chart now documents the throughput gate and the output-quality
   gate alongside the tier table, since the declared tier alone has never been
-  what a contribution is actually paid.
+  what a contribution is actually scored.
 - v0.17.3 is a non-mandatory Mainnet headless-worker release. `CYPHES_HEADLESS=1`
   (or `--headless`) branches before Tauri is constructed, because building the
   Tauri runtime initialises GTK and requires a display. The headless path builds
@@ -470,11 +470,11 @@ Artifact Two independently returns:
   and verify, so the two cannot drift. Adds `tracing`/`RUST_LOG` support, which
   the app had never had, and clean SIGTERM shutdown for systemd. Campaign seeding
   is not yet available headless and remains a cockpit duty.
-- v0.17.2 is a non-mandatory Mainnet economic-integrity release. `model_multiplier`
+- v0.17.2 is a non-mandatory Mainnet model-scoring-integrity release. `model_multiplier`
   was an if/else cascade with no branch matching `glm`, so every GLM release fell
   through to the `0.9x` unknown-model floor. Across the final testnet those models
   produced 5.02 and 3.75 findings per pass at 56% and 53% unique titles, while the
-  model taking 54% of all issued ATP produced 0.89 per pass at 1.2% unique. The
+  model receiving 54% of all recorded allocation produced 0.89 per pass at 1.2% unique. The
   cascade is now an ordered tier table, so adding a model is a data change and
   specific patterns provably beat generic size suffixes. Multipliers above `3.0x`
   on a cloud-proxied runtime are gated on measured tokens/sec; a missing
@@ -499,7 +499,7 @@ Artifact Two independently returns:
   "source not supplied in context" dead ends were the two dominant failure
   modes in final-testnet output.
 - v0.17.0 is a non-mandatory Mainnet settlement-rescue release. It keeps the
-  same database marker, ATP wire, receipt format, and economics, but adds an
+  same database marker, wire protocol, receipt format, and scoring, but adds an
   exact-ID recovery handshake for straggler receipts. Nodes with stale submitted
   receipts ask connected settlement-rescue-capable peers about those receipt
   IDs; peers either verify them, return known verification IDs, request missing
@@ -507,13 +507,13 @@ Artifact Two independently returns:
   the same work unit. Live connected peers remain eligible for recovery traffic
   even when an old dial-failure cooldown would block a fresh dial.
 - Main CYPHES UI is centered on the autonomous cockpit: tokens/sec, pending and
-  Verified ATP, progress, peers, target metadata, live protocol coverage, and
+  verified work, progress, peers, target metadata, live protocol coverage, and
   receipt-backed event telemetry. Manual work-order controls are intentionally
   removed from the main node app.
 - `campaign.html` provides a separate protocol/admin console for creating
-  signed campaigns, viewing network state, ATP proof logs, receipt trails,
+  signed campaigns, viewing network state, Cognition Proof logs, receipt trails,
   protocol events, work-unit status, requester verification/export actions,
-  and developer-facing ATP envelope metadata.
+  and developer-facing receipt metadata.
 - Local-model `Run Audit Pipeline` execution through LM Studio or Ollama with
   hidden local endpoints, model discovery, progress events, tokens/sec
   measurement, effective skill hash, input hash, output hash, and signed
@@ -528,27 +528,27 @@ Artifact Two independently returns:
   current coverage epoch, starts the next epoch after a full target pass,
   auto-claims open remote work only while work mode is enabled, runs the
   selected local model under the runtime limit, signs contributions, and
-  returns verifier receipts/ATP Credit allocations.
+  returns verifier receipts and work allocations.
 - Guardian Index v2 contains 165 structured public coverage targets with
   source signals, category, chains, static TVL/risk rank seed, repo URLs,
   focused paths, docs/security references, in-scope/out-of-scope text,
   criticality, and priority score. It is a bundled seed, not a live bounty or
   payout feed.
-- Live network pulse showing active nodes, open work, pending ATP, Verified
-  ATP, daily work progress, and local cognition rate. Pending ATP is
-  provisional; Verified ATP only changes after accepted independent verifier
+- Live network pulse showing active nodes, open work, pending and verified
+  work, daily work progress, and local cognition rate. Pending work is
+  provisional; verified work only changes after accepted independent verifier
   receipts.
 - Signed node contributions and signed verifier decisions.
-- Standardized Cognition Proof packets for every new paid contribution,
+- Standardized Cognition Proof packets for every new accepted contribution,
   including target, claim, method, evidence, quality, and settlement metadata.
-- Receipt-backed ATP Credits issued only after accepted independent
+- Receipt-backed work records finalized only after accepted independent
   verification results.
 - Local pinned-source cache for GitHub repository metadata, moving commit
   resolution, immutable commit tree reads, and raw pinned file reads.
 - Final audit report bundle export with document control, methodology, audit
   pass matrix, evidence arbitration, findings register, coverage and negative
   findings, non-reportable/rejected lead appendix, runtime/receipt appendix,
-  credit summary, and manifest.
+  work summary, and manifest.
 - Portable Artifact Two-compatible receipt bundles under
   `~/.cyphes/receipts/<transaction-id>/`.
 - A deployable combined relay/rendezvous service with one-node and automatic
@@ -568,9 +568,8 @@ Artifact Two independently returns:
   not yet isolated in a hardened OS container or VM.
 - Self-hosted worker mode should use isolated hardware, a dedicated OS account,
   or a VM until the hardened headless worker container is available.
-- No escrow, token transfer, release, refund, or dispute adapter. Verified ATP
-  is off-chain receipt-derived accounting only, not a globally canonical
-  token balance.
+- No automated external settlement, release, refund, or dispute adapter. Verified
+  work is receipt-derived accounting only, not a transferable balance.
 - No OpenClaw/Hermes runtime adapter yet. The current `Run Audit Pipeline` path
   is local-model-only through LM Studio or Ollama.
 - No claim that local model output is automatically a valid vulnerability.
@@ -585,7 +584,7 @@ Artifact Two independently returns:
   source manifest hashes embedded directly in contribution receipts.
 - Source manifests are signed in gateway response headers, but source manifest
   hashes are not yet embedded directly in contribution receipts.
-- No per-node Source Gateway quotas keyed by ATP identity yet.
+- No per-node Source Gateway quotas keyed by node identity yet.
 - No private GitHub authorization.
 - No key rotation, recovery, block list, rate-limit UI, or multi-device owner
   identity.
@@ -667,7 +666,7 @@ For the manual fallback, share the circuit address shown by the node:
 ```
 
 Paste that address into **Connect to node** on the other client. The relay
-routes encrypted libp2p streams; it cannot forge ATP signatures or receipts.
+routes encrypted libp2p streams; it cannot forge receipt signatures or receipts.
 
 Verify automatic discovery between two fresh identities:
 
@@ -720,24 +719,24 @@ python3 ../Artifact-Two/tools/verify_atp_bundle.py \
 | Path | Responsibility |
 | --- | --- |
 | `src/App.tsx` | Native transaction workflow and truthful state labels |
-| `src-tauri/src/atp.rs` | ATP envelopes, signing, verification, hashes, transitions |
+| `src-tauri/src/atp.rs` | Signed envelopes, signing, verification, hashes, transitions |
 | `src-tauri/src/audit_profile.rs` | Repository-audit contract and receipt profile |
-| `src-tauri/src/audit_labor.rs` | Protocol campaigns, work units, contributions, verification, credits, reports |
+| `src-tauri/src/audit_labor.rs` | Protocol campaigns, work units, contributions, verification, allocations, reports |
 | `src-tauri/src/audit_runtime.rs` | LM Studio/Ollama local model runtime, GitHub read-only context, skill output parsing |
 | `src-tauri/src/store.rs` | SQLite event chain, replay defense, transaction projections |
 | `src-tauri/src/worker.rs` | Context leases and deterministic repository worker |
 | `src-tauri/src/bundle.rs` | Portable receipt and audit-report bundle export |
 | `src-tauri/src/p2p.rs` | Direct, LAN, and relay-backed libp2p delivery |
 | `src-tauri/src/commands.rs` | Tauri operations for the complete work order |
-| `protocol/` | Schemas, skills, guardian target index, canonical fixtures, and verified ATP-L1 bundle |
+| `protocol/` | Schemas, skills, guardian target index, canonical fixtures, and verified receipt bundle |
 | `relay/` | Combined public relay/rendezvous service and smoke clients |
 | `source-gateway/` | `source.cyphes.com` read-through GitHub cache and signed source manifest service |
 | `network/` | Remotely updateable default-network manifest |
 
 ## Documentation
 
-- [ATP implementation status](docs/ATP_IMPLEMENTATION_STATUS.md)
-- [ATP Credit trust model](docs/ATP_CREDIT_TRUST_MODEL.md)
+- [Implementation status](docs/ATP_IMPLEMENTATION_STATUS.md)
+- [Receipt trust model](docs/ATP_CREDIT_TRUST_MODEL.md)
 - [Proof of Protection](docs/PROOF_OF_PROTECTION.md)
 - [Source Gateway](docs/SOURCE_GATEWAY.md)
 - [Join the network](docs/JOIN_NETWORK.md)
@@ -762,8 +761,8 @@ npm run build
 ```
 
 Please do not add simulated peers, work orders, responses, reputation, payment,
-credits, external payouts, exploit claims, or verification claims. Product state
-must come from signed and committed ATP data or portable artifacts.
+balances, external payouts, exploit claims, or verification claims. Product state
+must come from signed and committed receipt data or portable artifacts.
 
 ## License
 
