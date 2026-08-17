@@ -1,0 +1,22 @@
+{
+  "profile": "cyphes.audit-skill/0.6",
+  "skillId": "cyphes-audit-skill",
+  "version": "0.6",
+  "path": "protocol/skills/cyphes-audit-skill.v0.6.md",
+  "sha256": "sha256:84f536c4332c6460f34543d6f485ccfce8a8b747fb5c3846c52f512a998816aa",
+  "runtimePolicy": [
+    "local-model-only",
+    "github-read-only-pinned-commit",
+    "no-repository-writes",
+    "no-untrusted-code-execution",
+    "no-api-key-required",
+    "multi-pass-professional-audit-pipeline",
+    "exploitability-gate"
+  ],
+  "outputSchema": {
+    "summaryMarkdown": "string",
+    "findings": "AuditFinding[]",
+    "coverage": "CoverageItem[]",
+    "commands": "string[]"
+  }
+}

@@ -5863,6 +5863,7 @@ mod tests {
                     RuntimeDescriptor::deterministic_fixture(),
                     format!("Backpressure fixture contribution {submitted}."),
                     vec![],
+                    Vec::new(),
                     vec![labor_artifact(&format!("backpressure-{submitted}.md"))],
                     vec![CoverageItem {
                         area: "backpressure".to_string(),
@@ -5911,6 +5912,7 @@ mod tests {
             RuntimeDescriptor::deterministic_fixture(),
             "Pending fixture contribution.".to_string(),
             vec![],
+            Vec::new(),
             vec![labor_artifact("notes.md")],
             vec![CoverageItem {
                 area: "scope".to_string(),
@@ -5977,6 +5979,7 @@ mod tests {
             work_unit.work_unit_id.clone(),
             RuntimeDescriptor::deterministic_fixture(),
             "Scope mapped with no code execution.".to_string(),
+            Vec::new(),
             Vec::new(),
             vec![labor_artifact("scope-notes.md")],
             vec![CoverageItem {
@@ -6104,7 +6107,9 @@ mod tests {
                 impact: None,
                 evidence: vec!["coverage-notes.md".to_string()],
                 reportable: false,
+            ..Default::default()
             }],
+            Vec::new(),
             vec![labor_artifact("coverage-notes.md")],
             vec![CoverageItem {
                 area: "oracle mocks".to_string(),
@@ -6213,7 +6218,9 @@ mod tests {
                 impact: Some("Principal theft".to_string()),
                 evidence: vec!["prior-audit.md".to_string()],
                 reportable: true,
+            ..Default::default()
             }],
+            Vec::new(),
             vec![labor_artifact("duplicate.md")],
             vec![CoverageItem {
                 area: "known issue search".to_string(),
@@ -6233,6 +6240,7 @@ mod tests {
             "DUPLICATE_KNOWN_ISSUE".to_string(),
             "Lead is duplicate and appendix-only.".to_string(),
             vec![],
+            
             vec![labor_artifact("rejection.md")],
         )
         .unwrap();
@@ -6300,7 +6308,9 @@ mod tests {
                 impact: None,
                 evidence: vec!["network-candidate.md".to_string()],
                 reportable: false,
+            ..Default::default()
             }],
+            Vec::new(),
             vec![labor_artifact("network-candidate.md")],
             vec![CoverageItem {
                 area: "network verification queue".to_string(),
@@ -6416,6 +6426,7 @@ mod tests {
             RuntimeDescriptor::deterministic_fixture(),
             "Worker A submitted a signed receipt first.".to_string(),
             vec![],
+            Vec::new(),
             vec![labor_artifact("worker-a.md")],
             vec![CoverageItem {
                 area: "parallel worker recovery".to_string(),
@@ -6438,6 +6449,7 @@ mod tests {
             RuntimeDescriptor::deterministic_fixture(),
             "Worker B submitted a raced signed receipt through peer sync.".to_string(),
             vec![],
+            Vec::new(),
             vec![labor_artifact("worker-b.md")],
             vec![CoverageItem {
                 area: "parallel worker recovery".to_string(),
@@ -6497,6 +6509,7 @@ mod tests {
             RuntimeDescriptor::deterministic_fixture(),
             "Worker A submitted the receipt that settles the work unit.".to_string(),
             vec![],
+            Vec::new(),
             vec![labor_artifact("worker-a.md")],
             vec![CoverageItem {
                 area: "parallel receipt finality".to_string(),
@@ -6517,6 +6530,7 @@ mod tests {
             RuntimeDescriptor::deterministic_fixture(),
             "Worker B submitted a late parallel receipt.".to_string(),
             vec![],
+            Vec::new(),
             vec![labor_artifact("worker-b.md")],
             vec![CoverageItem {
                 area: "parallel receipt finality".to_string(),
@@ -6587,6 +6601,7 @@ mod tests {
             RuntimeDescriptor::deterministic_fixture(),
             "Tried to submit without a signed work-unit claim.".to_string(),
             vec![],
+            Vec::new(),
             vec![labor_artifact("unclaimed.md")],
             vec![CoverageItem {
                 area: "claim enforcement".to_string(),
@@ -6654,6 +6669,7 @@ mod tests {
             RuntimeDescriptor::deterministic_fixture(),
             "Attempted to submit work for another node's claim.".to_string(),
             vec![],
+            Vec::new(),
             vec![labor_artifact("wrong-worker.md")],
             vec![CoverageItem {
                 area: "claim enforcement".to_string(),
@@ -6674,6 +6690,7 @@ mod tests {
             RuntimeDescriptor::deterministic_fixture(),
             "Submitted repo inventory for the claimed work unit.".to_string(),
             vec![],
+            Vec::new(),
             vec![labor_artifact("repo-map.md")],
             vec![CoverageItem {
                 area: "repository inventory".to_string(),
@@ -6693,6 +6710,7 @@ mod tests {
             RuntimeDescriptor::deterministic_fixture(),
             "Attempted to submit a second receipt for the claimed unit.".to_string(),
             vec![],
+            Vec::new(),
             vec![labor_artifact("repo-map-duplicate.md")],
             vec![CoverageItem {
                 area: "repository inventory".to_string(),
@@ -6784,6 +6802,7 @@ mod tests {
             RuntimeDescriptor::deterministic_fixture(),
             "Late submission after a stale claim expired.".to_string(),
             vec![],
+            Vec::new(),
             vec![labor_artifact("late.md")],
             vec![CoverageItem {
                 area: "stale claim".to_string(),
@@ -6825,6 +6844,7 @@ mod tests {
             RuntimeDescriptor::deterministic_fixture(),
             "Mapped repository inventory for dashboard summary coverage.".to_string(),
             vec![],
+            Vec::new(),
             vec![labor_artifact("inventory.md")],
             vec![CoverageItem {
                 area: "repository inventory".to_string(),
@@ -6933,6 +6953,7 @@ mod tests {
             "Receipt was produced while the claim was valid but delivered after expiry."
                 .to_string(),
             vec![],
+            Vec::new(),
             vec![labor_artifact("delayed-replay.md")],
             vec![CoverageItem {
                 area: "delayed replay".to_string(),
@@ -7017,6 +7038,7 @@ mod tests {
             RuntimeDescriptor::deterministic_fixture(),
             "Receipt arrived after the claim expired on the verifier.".to_string(),
             vec![],
+            Vec::new(),
             vec![labor_artifact("historical-claim-replay.md")],
             vec![CoverageItem {
                 area: "historical claim replay".to_string(),
@@ -7072,6 +7094,7 @@ mod tests {
             RuntimeDescriptor::deterministic_fixture(),
             "Contribution row repairs a submitted work-unit shell.".to_string(),
             vec![],
+            Vec::new(),
             vec![labor_artifact("submitted-shell-repair.md")],
             vec![CoverageItem {
                 area: "submitted shell replay".to_string(),
@@ -7114,6 +7137,7 @@ mod tests {
             RuntimeDescriptor::deterministic_fixture(),
             "Pending receipt should be repair-rebroadcast with its claim.".to_string(),
             vec![],
+            Vec::new(),
             vec![labor_artifact("dependency-review.md")],
             vec![CoverageItem {
                 area: "dependency and config review".to_string(),
@@ -7179,6 +7203,7 @@ mod tests {
             RuntimeDescriptor::deterministic_fixture(),
             "Settlement rescue should name this receipt exactly.".to_string(),
             vec![],
+            Vec::new(),
             vec![labor_artifact("settlement-rescue.md")],
             vec![CoverageItem {
                 area: "settlement rescue".to_string(),
@@ -7284,6 +7309,7 @@ mod tests {
             RuntimeDescriptor::deterministic_fixture(),
             "This receipt is unresolved on the origin node.".to_string(),
             vec![],
+            Vec::new(),
             vec![labor_artifact("stuck.md")],
             vec![CoverageItem {
                 area: "stuck receipt".to_string(),
@@ -7318,6 +7344,7 @@ mod tests {
             RuntimeDescriptor::deterministic_fixture(),
             "Peer finalized equivalent work first.".to_string(),
             vec![],
+            Vec::new(),
             vec![labor_artifact("winning.md")],
             vec![CoverageItem {
                 area: "winning receipt".to_string(),
@@ -7386,7 +7413,8 @@ mod tests {
                 RuntimeDescriptor::deterministic_fixture(),
                 format!("Superseded repair-window fixture {index}."),
                 vec![],
-                vec![labor_artifact(&format!("superseded-{index}.md"))],
+                Vec::new(),
+vec![labor_artifact(&format!("superseded-{index}.md"))],
                 vec![CoverageItem {
                     area: "stale repair filtering".to_string(),
                     status: "superseded".to_string(),
@@ -7423,6 +7451,7 @@ mod tests {
             RuntimeDescriptor::deterministic_fixture(),
             "Live receipt must not be starved by superseded history.".to_string(),
             vec![],
+            Vec::new(),
             vec![labor_artifact("live-repair.md")],
             vec![CoverageItem {
                 area: "stale repair filtering".to_string(),
@@ -7492,6 +7521,7 @@ mod tests {
             RuntimeDescriptor::deterministic_fixture(),
             "Settled work must not be repair-rebroadcast.".to_string(),
             vec![],
+            Vec::new(),
             vec![labor_artifact("settled-repair.md")],
             vec![CoverageItem {
                 area: "settlement exclusion".to_string(),
@@ -7667,6 +7697,7 @@ mod tests {
             RuntimeDescriptor::deterministic_fixture(),
             "Inventory should advertise this pending contribution.".to_string(),
             vec![],
+            Vec::new(),
             vec![labor_artifact("inventory.md")],
             vec![CoverageItem {
                 area: "repository inventory".to_string(),
@@ -7762,6 +7793,7 @@ mod tests {
             RuntimeDescriptor::deterministic_fixture(),
             "Reviewed dependency and configuration posture with bounded evidence.".to_string(),
             vec![],
+            Vec::new(),
             vec![labor_artifact("dependency-review.md")],
             vec![CoverageItem {
                 area: "dependency and config review".to_string(),
@@ -7835,6 +7867,7 @@ mod tests {
             RuntimeDescriptor::deterministic_fixture(),
             "Reviewed dependency and configuration posture with bounded evidence.".to_string(),
             vec![],
+            Vec::new(),
             vec![labor_artifact("dependency-review.md")],
             vec![CoverageItem {
                 area: "dependency and config review".to_string(),
@@ -7928,6 +7961,7 @@ mod tests {
             RuntimeDescriptor::deterministic_fixture(),
             "Mapped repository inventory for collision fixture.".to_string(),
             vec![],
+            Vec::new(),
             vec![labor_artifact("inventory.md")],
             vec![CoverageItem {
                 area: "repository inventory".to_string(),
@@ -7947,6 +7981,7 @@ mod tests {
             RuntimeDescriptor::deterministic_fixture(),
             "Mapped dependency posture for collision fixture.".to_string(),
             vec![],
+            Vec::new(),
             vec![labor_artifact("dependency-review.md")],
             vec![CoverageItem {
                 area: "dependency and config review".to_string(),
@@ -8040,6 +8075,7 @@ mod tests {
             RuntimeDescriptor::deterministic_fixture(),
             "Mapped repository inventory locally.".to_string(),
             vec![],
+            Vec::new(),
             vec![labor_artifact("inventory.md")],
             vec![CoverageItem {
                 area: "repository inventory".to_string(),
@@ -8058,6 +8094,7 @@ mod tests {
             "SELF_PREVIEW_ACCEPTED".to_string(),
             "Self-verification is a local preview and cannot mint earned ATP.".to_string(),
             vec![],
+            
             vec![labor_artifact("verification.md")],
         )
         .unwrap();
@@ -8138,6 +8175,7 @@ mod tests {
             RuntimeDescriptor::deterministic_fixture(),
             "Reviewed dependency and configuration posture with bounded evidence.".to_string(),
             vec![],
+            Vec::new(),
             vec![labor_artifact("dependency-review.md")],
             vec![CoverageItem {
                 area: "dependency and config review".to_string(),

@@ -89,6 +89,7 @@ const LABOR_CAPABILITY_VERIFY_AFTER_BUNDLE: &str = "verify_after_bundle_v1";
 const LABOR_CAPABILITY_TELEMETRY: &str = "audit_labor_telemetry_v1";
 const LABOR_CAPABILITY_VERIFIER_PULL: &str = "verifier_pull_v1";
 const LABOR_CAPABILITY_SETTLEMENT_RESCUE: &str = "settlement_rescue_v1";
+const LABOR_CAPABILITY_STRUCTURED_FINDING_FIELDS: &str = "structured_finding_fields_v1";
 
 #[derive(Debug, Clone)]
 struct InfrastructureTarget {
@@ -492,6 +493,7 @@ fn labor_wire_capabilities() -> Vec<String> {
         LABOR_CAPABILITY_TELEMETRY,
         LABOR_CAPABILITY_VERIFIER_PULL,
         LABOR_CAPABILITY_SETTLEMENT_RESCUE,
+        LABOR_CAPABILITY_STRUCTURED_FINDING_FIELDS,
     ]
     .into_iter()
     .map(ToString::to_string)

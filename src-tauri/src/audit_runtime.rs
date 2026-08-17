@@ -8,13 +8,13 @@ use serde_json::{json, Value};
 use crate::{
     audit_labor::{
         sha256_ref, AuditFinding, AuditWorkUnit, ContributionArtifact, CoverageItem,
-        NodeContribution, ProtocolAuditCampaign, RuntimeDescriptor,
+        NodeContribution, ProtocolAuditCampaign, RuntimeDescriptor, StructuredFindingMetadata,
     },
     audit_profile::RepositoryTarget,
     github,
 };
 
-const AUDIT_SKILL_TEXT: &str = include_str!("../../protocol/skills/cyphes-audit-skill.v0.5.md");
+const AUDIT_SKILL_TEXT: &str = include_str!("../../protocol/skills/cyphes-audit-skill.v0.6.md");
 const MAX_TREE_FILES: usize = 20_000;
 const MAX_SELECTED_FILES: usize = 16;
 const MAX_FILE_BYTES: usize = 28_000;
@@ -48,6 +48,14 @@ Field rules — read these before copying the shape:
   informational findings.
 - "evidence" entries cite a file path from the supplied context, plus a function
   or line where you have one, and must come from the file being accused.
+- "exploitPath" (optional) is a concise walk of the attack path: who calls what,
+  in what order, to reach the bad state. Omit for informational findings.
+- "filePath" (optional) is the exact repository-relative path of the file being
+  accused (e.g. "contracts/Vault.sol"). Must match a file in the supplied context.
+- "function" (optional) is the function name being accused.
+- "line" (optional) is the integer line number of the defect.
+- "reproductionSteps" (optional) is a list of concrete steps to reproduce on a
+  testnet/fork. Omit when not applicable.
 
 Shape (illustration only — do not copy these values):
 
@@ -61,6 +69,11 @@ Shape (illustration only — do not copy these values):
       "status": "candidate",
       "impact": "Reachable by any depositor when the vault is empty. No mitigation: the early return at line 214 precedes _accrue(). Bounded to one accrual period, no fund loss.",
       "evidence": ["contracts/Vault.sol: withdraw(), line 214 - early return before _accrue()"],
+      "exploitPath": "depositor calls withdraw() when totalSupply is zero; early return at line 214 skips _accrue()",
+      "filePath": "contracts/Vault.sol",
+      "function": "withdraw",
+      "line": 214,
+      "reproductionSteps": ["Deploy Vault with zero supply", "Call withdraw() as any depositor", "Observe fee accrual skipped"],
       "reportable": false
     }
   ],
@@ -110,6 +123,7 @@ pub struct LocalAuditSkillRun {
     pub runtime: RuntimeDescriptor,
     pub notes_markdown: String,
     pub findings: Vec<AuditFinding>,
+    pub structured_finding_metadata: Vec<StructuredFindingMetadata>,
     pub artifacts: Vec<ContributionArtifact>,
     pub coverage: Vec<CoverageItem>,
     pub commands: Vec<String>,
@@ -542,6 +556,7 @@ pub async fn run_local_audit_skill(
         runtime,
         notes_markdown: parsed.notes_markdown,
         findings: parsed.findings,
+        structured_finding_metadata: parsed.structured_finding_metadata,
         artifacts,
         coverage: parsed.coverage,
         commands: parsed.commands,
@@ -1275,6 +1290,7 @@ fn target_source_absent_run(
         },
         notes_markdown,
         findings,
+        structured_finding_metadata: Vec::new(),
         artifacts,
         coverage,
         commands,
@@ -1811,6 +1827,7 @@ fn prior_contribution_digest(contributions: &[NodeContribution]) -> String {
 struct ParsedModelOutput {
     notes_markdown: String,
     findings: Vec<AuditFinding>,
+    structured_finding_metadata: Vec<StructuredFindingMetadata>,
     coverage: Vec<CoverageItem>,
     commands: Vec<String>,
     parser_fallback: bool,
@@ -1825,6 +1842,7 @@ fn parse_model_output(content: &str) -> ParsedModelOutput {
             reason
         ),
         findings: Vec::new(),
+        structured_finding_metadata: Vec::new(),
         coverage: vec![CoverageItem {
             area: "local model output".to_string(),
             status: "needs_review".to_string(),
@@ -1874,13 +1892,18 @@ fn parse_json_output(value: &Value) -> Result<ParsedModelOutput, String> {
         })
         .filter(|items| !items.is_empty())
         .ok_or_else(|| "commands array is required".to_string())?;
-    let findings = value
+    let finding_pairs = value
         .get("findings")
         .and_then(Value::as_array)
         .ok_or_else(|| "findings array is required".to_string())?
         .iter()
         .enumerate()
         .map(|item| value_to_finding(item, &commands))
+        .collect::<Vec<_>>();
+    let findings = finding_pairs.iter().map(|(f, _)| f.clone()).collect::<Vec<_>>();
+    let structured_finding_metadata = finding_pairs
+        .into_iter()
+        .map(|(_, m)| m)
         .collect::<Vec<_>>();
     let coverage = value
         .get("coverage")
@@ -1902,19 +1925,25 @@ fn parse_json_output(value: &Value) -> Result<ParsedModelOutput, String> {
     Ok(ParsedModelOutput {
         notes_markdown,
         findings,
+        structured_finding_metadata,
         coverage,
         commands,
         parser_fallback: false,
     })
 }
 
-fn value_to_finding((index, value): (usize, &Value), commands: &[String]) -> AuditFinding {
+fn value_to_finding(
+    (index, value): (usize, &Value),
+    commands: &[String],
+) -> (AuditFinding, StructuredFindingMetadata) {
     let requested_reportable = value
         .get("reportable")
         .and_then(Value::as_bool)
         .unwrap_or(false);
+    let finding_id =
+        string_field(value, "id").unwrap_or_else(|| format!("CYPHES-LOCAL-{:03}", index + 1));
     let mut finding = AuditFinding {
-        id: string_field(value, "id").unwrap_or_else(|| format!("CYPHES-LOCAL-{:03}", index + 1)),
+        id: finding_id.clone(),
         title: string_field(value, "title").unwrap_or_else(|| "Untitled model lead".to_string()),
         severity: string_field(value, "severity").unwrap_or_else(|| "informational".to_string()),
         status: string_field(value, "status").unwrap_or_else(|| {
@@ -1938,7 +1967,17 @@ fn value_to_finding((index, value): (usize, &Value), commands: &[String]) -> Aud
             finding.status = "needs_reproduction".to_string();
         }
     }
-    finding
+    // Structured metadata goes in the NON-signed sidecar, so the signed
+    // canonical body stays byte-identical to v0.5 and old verifiers still pass.
+    let metadata = StructuredFindingMetadata {
+        finding_id,
+        exploit_path: string_field(value, "exploitPath"),
+        file_path: string_field(value, "filePath"),
+        function: string_field(value, "function"),
+        line: value.get("line").and_then(Value::as_u64),
+        reproduction_steps: string_array(value, "reproductionSteps"),
+    };
+    (finding, metadata)
 }
 
 fn apply_validation_reportability(
@@ -2092,7 +2131,7 @@ fn is_placeholder_text(value: &str) -> bool {
         || normalized.contains("contract.sol")
         || normalized.contains("artifact hash: 0x")
         // Strings lifted verbatim from the illustration in
-        // STRUCTURED_OUTPUT_CONTRACT and skill pack v0.5.
+        // STRUCTURED_OUTPUT_CONTRACT and skill pack v0.6.
         //
         // v0.4 used obviously-fake placeholders, and weak models echoed them
         // ("finding or security lead title" was the single most common finding
@@ -2486,6 +2525,42 @@ mod tests {
         assert_eq!(output.findings.len(), 1);
         assert_eq!(output.coverage[0].area, "scope");
         assert!(output.notes_markdown.contains("Reviewed"));
+    }
+
+    #[test]
+    fn structured_finding_metadata_goes_to_sidecar() {
+        // Model emits the new structured fields.
+        let json = r#"{
+          "summaryMarkdown": "Audit Summary",
+          "findings": [{
+            "id":"X",
+            "title":"Lead",
+            "severity":"low",
+            "status":"candidate",
+            "impact":"Reachable by any depositor.",
+            "evidence":["contracts/Vault.sol: withdraw(), line 214"],
+            "exploitPath":"depositor calls withdraw() when supply is zero",
+            "filePath":"contracts/Vault.sol",
+            "function":"withdraw",
+            "line":214,
+            "reproductionSteps":["Deploy Vault", "Call withdraw()"],
+            "reportable":false
+          }],
+          "coverage": [{"area":"scope","status":"completed","evidence":["README.md reviewed"]}],
+          "commands": ["no repository code execution"]
+        }"#;
+
+        let out = parse_model_output(json);
+        assert_eq!(out.findings.len(), 1);
+        // The signed AuditFinding stays at 7 fields (no structured fields).
+        assert_eq!(out.structured_finding_metadata.len(), 1);
+        let meta = &out.structured_finding_metadata[0];
+        assert_eq!(meta.finding_id, "X");
+        assert_eq!(meta.exploit_path.as_deref(), Some("depositor calls withdraw() when supply is zero"));
+        assert_eq!(meta.file_path.as_deref(), Some("contracts/Vault.sol"));
+        assert_eq!(meta.function.as_deref(), Some("withdraw"));
+        assert_eq!(meta.line, Some(214));
+        assert_eq!(meta.reproduction_steps.len(), 2);
     }
 
     #[test]
