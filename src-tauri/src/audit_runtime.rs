@@ -1917,7 +1917,10 @@ fn parse_json_output(value: &Value) -> Result<ParsedModelOutput, String> {
         .enumerate()
         .map(|item| value_to_finding(item, &commands))
         .collect::<Vec<_>>();
-    let findings = finding_pairs.iter().map(|(f, _)| f.clone()).collect::<Vec<_>>();
+    let findings = finding_pairs
+        .iter()
+        .map(|(f, _)| f.clone())
+        .collect::<Vec<_>>();
     let structured_finding_metadata = finding_pairs
         .into_iter()
         .map(|(_, m)| m)
@@ -2576,7 +2579,10 @@ mod tests {
         assert_eq!(out.structured_finding_metadata.len(), 1);
         let meta = &out.structured_finding_metadata[0];
         assert_eq!(meta.finding_id, "X");
-        assert_eq!(meta.exploit_path.as_deref(), Some("depositor calls withdraw() when supply is zero"));
+        assert_eq!(
+            meta.exploit_path.as_deref(),
+            Some("depositor calls withdraw() when supply is zero")
+        );
         assert_eq!(meta.file_path.as_deref(), Some("contracts/Vault.sol"));
         assert_eq!(meta.function.as_deref(), Some("withdraw"));
         assert_eq!(meta.line, Some(214));

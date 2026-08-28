@@ -2450,7 +2450,6 @@ mod tests {
             "INSUFFICIENT_EVIDENCE".to_string(),
             "Evidence did not support the submitted lead.".to_string(),
             vec![],
-            
             vec![artifact("verification.md")],
         )
         .unwrap();
@@ -2525,7 +2524,6 @@ mod tests {
             "COVERAGE_ACCEPTED".to_string(),
             "Structured evidence is bounded and useful.".to_string(),
             vec![],
-            
             vec![artifact("verification.md")],
         )
         .unwrap();
@@ -2537,7 +2535,6 @@ mod tests {
             "PARSER_FALLBACK_ACCEPTED".to_string(),
             "Fallback notes are accepted with reduced credit.".to_string(),
             vec![],
-            
             vec![artifact("verification.md")],
         )
         .unwrap();
@@ -2602,7 +2599,7 @@ mod tests {
                 impact: Some("fund loss".to_string()),
                 evidence: vec!["src/Vault.sol:42".to_string()],
                 reportable: true,
-            ..Default::default()
+                ..Default::default()
             }],
             Vec::new(),
             vec![artifact("validation-notes.md")],
@@ -2702,7 +2699,7 @@ mod tests {
                 impact: Some("fund loss".to_string()),
                 evidence: vec!["src/Vault.sol:42".to_string()],
                 reportable: true,
-            ..Default::default()
+                ..Default::default()
             }],
             Vec::new(),
             vec![artifact("finding.md")],
@@ -2722,7 +2719,6 @@ mod tests {
             "COVERAGE_ACCEPTED".to_string(),
             "Structured evidence is bounded and useful.".to_string(),
             vec![],
-            
             vec![artifact("verification.md")],
         )
         .unwrap();
@@ -2734,7 +2730,6 @@ mod tests {
             "FINDING_ACCEPTED".to_string(),
             "Reportable finding accepted.".to_string(),
             vec![],
-            
             vec![artifact("verification.md")],
         )
         .unwrap();
@@ -2786,7 +2781,6 @@ mod tests {
             "Self-verification is useful for local preview but cannot issue earned ATP."
                 .to_string(),
             vec![],
-            
             vec![artifact("verification.md")],
         )
         .unwrap();
@@ -2830,7 +2824,7 @@ mod tests {
                 impact: Some("loss of rewards".to_string()),
                 evidence: vec!["src/Rewards.sol:10".to_string()],
                 reportable: true,
-            ..Default::default()
+                ..Default::default()
             }],
             Vec::new(),
             vec![artifact("findings.json")],
@@ -2856,7 +2850,7 @@ mod tests {
                 impact: Some("principal theft".to_string()),
                 evidence: vec!["known audit report".to_string()],
                 reportable: true,
-            ..Default::default()
+                ..Default::default()
             }],
             Vec::new(),
             vec![artifact("duplicate.md")],
@@ -2876,7 +2870,6 @@ mod tests {
             "FINDING_ACCEPTED".to_string(),
             "Accepted.".to_string(),
             vec![],
-            
             vec![artifact("verification-a.md")],
         )
         .unwrap();
@@ -2888,7 +2881,6 @@ mod tests {
             "DUPLICATE".to_string(),
             "Duplicate.".to_string(),
             vec![],
-            
             vec![artifact("verification-r.md")],
         )
         .unwrap();
