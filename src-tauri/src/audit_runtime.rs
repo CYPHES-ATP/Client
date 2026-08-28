@@ -949,6 +949,7 @@ async fn run_ollama_chat_once(
         }
     }
     if content.trim().is_empty() {
+        let reason = done_reason.as_deref().unwrap_or("unknown");
         tracing::warn!(
             campaign = %campaign.campaign_id,
             work_unit = %work_unit.work_unit_id,
@@ -960,10 +961,26 @@ async fn run_ollama_chat_once(
             parsed_lines,
             thinking_bytes,
             done_seen,
-            done_reason = done_reason.as_deref().unwrap_or("unknown"),
+            done_reason = reason,
             eval_count,
             "Ollama returned no assembled response content"
         );
+        // A `length` stop with no assembled content means the model spent its
+        // whole output allowance on reasoning and terminated before answering.
+        // That is deterministic, not transient: the identical request exhausts
+        // the identical cap. Retrying costs three times the tokens and holds the
+        // claim for three times as long on a failure that cannot recover, so
+        // fail fast and name the cause. See
+        // release/v0.17.9/diagnostics/glm-5.3-flash-thinking-budget-2026-08-28.md
+        if reason.eq_ignore_ascii_case("length") {
+            let generated = eval_count.unwrap_or(0);
+            return Err(OllamaRequestError::terminal(format!(
+                "Model '{model}' exhausted its output allowance on reasoning \
+                 before emitting an answer (thinking_bytes={thinking_bytes}, \
+                 eval_count={generated}, done_reason=length). This model cannot \
+                 complete audit work units at the current provider output cap."
+            )));
+        }
         return Err(OllamaRequestError::retryable(
             "Ollama returned an empty streamed response",
         ));
@@ -2377,6 +2394,9 @@ const MODEL_TIERS: &[(&str, f64)] = &[
     // Reserved top tier. Matched on the exact family so the bare "kimi" pattern
     // below cannot reach it.
     ("kimi-k3", 50.0),
+    // Reserved tier. Matched on the exact family so neither the `glm-5.2` entry
+    // below nor the generic `glm-5` pattern can reach or widen it.
+    ("glm-5.3-flash", 25.0),
     // Earned tier. glm-5.2 is the best-measured model ever run on this network:
     // 3.75 findings per pass at 53% unique titles and 81 tok/s across 102 passes,
     // and it carried every pass it ever ran past the coverage-quality gate
@@ -2954,6 +2974,17 @@ mod tests {
         // past and future Kimi release inherits 50x by accident.
         assert_eq!(model_multiplier("kimi-k2"), 10.0);
         assert_eq!(model_multiplier("moonshot-kimi"), 10.0);
+    }
+
+    #[test]
+    fn glm_5_3_flash_holds_its_tier_without_widening_it() {
+        assert_eq!(model_multiplier("glm-5.3-flash"), 25.0);
+        assert_eq!(model_multiplier("glm-5.3-flash:cloud"), 25.0);
+        // The exact-family match must not widen to the rest of the glm-5 line,
+        // and must not disturb the earned glm-5.2 tier.
+        assert_eq!(model_multiplier("glm-5.3"), 10.0);
+        assert_eq!(model_multiplier("glm-5.2"), 20.0);
+        assert_eq!(model_multiplier("glm-5.1"), 10.0);
     }
 
     #[test]
