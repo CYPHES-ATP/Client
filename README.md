@@ -195,7 +195,8 @@ runtime receipt, so v0.17.0 does not rewrite or recompute.
 
 | Model or declared tier | New receipt multiplier | Basis |
 | --- | ---: | --- |
-| `kimi-k3` | `50.0x` | Reserved top tier. 2.8T parameters, 1M context. No network data yet |
+| `kimi-k3` | `50.0x` | Reserved top tier. 2.8T parameters, 1M context |
+| `glm-5.3-flash` | `25.0x` | Reserved. Matched on the exact family so the `glm-5.x` rule does not inherit it |
 | `glm-5.2` | `20.0x` | **Earned.** Best-measured model on the network: 3.75 findings/pass, 53% unique titles, 81 tok/s, 102/102 passes cleared the coverage gate |
 | `minimax-m3` | `10.0x` | Frontier, cloud-served |
 | `gpt-oss-120b` | `10.0x` | Frontier |
@@ -209,9 +210,9 @@ runtime receipt, so v0.17.0 does not rewrite or recompute.
 | `7b` / `8b` local | `1.0x` | |
 | Unknown small/local | `0.9x` | Floor |
 
-Tiers are matched most-specific-first, so `glm-5.2` does not widen to every
-`glm-5.x`, `kimi-k3` does not widen to every `kimi`, and `gpt-oss-120b` never
-falls through to the generic `20b` rule. A new model release must earn its tier
+Tiers are matched most-specific-first, so `glm-5.2` and `glm-5.3-flash` do not
+widen to every `glm-5.x`, `kimi-k3` does not widen to every `kimi`, and
+`gpt-oss-120b` never falls through to the generic `20b` rule. A new model release must earn its tier
 on its own measured output rather than inheriting a sibling's.
 
 **Two gates sit between the declared tier and the final applied multiplier.**

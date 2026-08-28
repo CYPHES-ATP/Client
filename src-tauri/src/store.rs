@@ -6107,7 +6107,7 @@ mod tests {
                 impact: None,
                 evidence: vec!["coverage-notes.md".to_string()],
                 reportable: false,
-            ..Default::default()
+                ..Default::default()
             }],
             Vec::new(),
             vec![labor_artifact("coverage-notes.md")],
@@ -6218,7 +6218,7 @@ mod tests {
                 impact: Some("Principal theft".to_string()),
                 evidence: vec!["prior-audit.md".to_string()],
                 reportable: true,
-            ..Default::default()
+                ..Default::default()
             }],
             Vec::new(),
             vec![labor_artifact("duplicate.md")],
@@ -6240,7 +6240,6 @@ mod tests {
             "DUPLICATE_KNOWN_ISSUE".to_string(),
             "Lead is duplicate and appendix-only.".to_string(),
             vec![],
-            
             vec![labor_artifact("rejection.md")],
         )
         .unwrap();
@@ -6308,7 +6307,7 @@ mod tests {
                 impact: None,
                 evidence: vec!["network-candidate.md".to_string()],
                 reportable: false,
-            ..Default::default()
+                ..Default::default()
             }],
             Vec::new(),
             vec![labor_artifact("network-candidate.md")],
@@ -7414,7 +7413,7 @@ mod tests {
                 format!("Superseded repair-window fixture {index}."),
                 vec![],
                 Vec::new(),
-vec![labor_artifact(&format!("superseded-{index}.md"))],
+                vec![labor_artifact(&format!("superseded-{index}.md"))],
                 vec![CoverageItem {
                     area: "stale repair filtering".to_string(),
                     status: "superseded".to_string(),
@@ -8094,7 +8093,6 @@ vec![labor_artifact(&format!("superseded-{index}.md"))],
             "SELF_PREVIEW_ACCEPTED".to_string(),
             "Self-verification is a local preview and cannot mint earned ATP.".to_string(),
             vec![],
-            
             vec![labor_artifact("verification.md")],
         )
         .unwrap();
